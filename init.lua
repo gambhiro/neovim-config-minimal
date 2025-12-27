@@ -4,6 +4,12 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Disable unused providers (prevents errors if not installed)
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+
 -- Basic settings
 vim.opt.mouse = 'a'  -- Enable mouse support
 vim.opt.number = true  -- Show line numbers
@@ -30,6 +36,10 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Disable netrw before nvim-tree setup (strongly recommended)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Plugin specifications
 require("lazy").setup({
   -- File explorer with mouse support
@@ -39,6 +49,10 @@ require("lazy").setup({
       "nvim-tree/nvim-web-devicons",
     },
     config = function()
+      -- Disable netrw at the very start
+      vim.g.loaded_netrw = 1
+      vim.g.loaded_netrwPlugin = 1
+
       require("nvim-tree").setup({
         view = {
           width = 30,
@@ -58,6 +72,24 @@ require("lazy").setup({
             quit_on_open = false,
           },
         },
+        -- Disable system_open to prevent the E475 error
+        system_open = {
+          cmd = nil,
+        },
+        -- Fix for the 'q' key error
+        on_attach = function(bufnr)
+          local api = require('nvim-tree.api')
+
+          local function opts(desc)
+            return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+          end
+
+          -- Default mappings
+          api.config.mappings.default_on_attach(bufnr)
+
+          -- Override 'q' to properly close
+          vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
+        end,
       })
     end,
   },
@@ -174,14 +206,15 @@ keymap.set('n', '<leader>bd', ':bdelete<CR>', { noremap = true, silent = true })
 
 -- SPC t m - Toggle mouse support (allows terminal selection when disabled)
 keymap.set('n', '<leader>tm', function()
-  if vim.opt.mouse:get() == 'a' then
-    vim.opt.mouse = ''
+  local current_mouse = vim.o.mouse
+  if current_mouse == 'a' then
+    vim.o.mouse = ''
     print('Mouse support disabled - terminal selection enabled')
   else
-    vim.opt.mouse = 'a'
+    vim.o.mouse = 'a'
     print('Mouse support enabled')
   end
-end, { noremap = true, silent = true, desc = 'Toggle mouse support' })
+end, { noremap = true, silent = false, desc = 'Toggle mouse support' })
 
 -- Toggle file explorer
 keymap.set('n', '<C-n>', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
@@ -196,20 +229,7 @@ for i = 1, 9 do
   keymap.set('n', '<leader>' .. i, ':BufferLineGoToBuffer ' .. i .. '<CR>', { noremap = true, silent = true })
 end
 
--- Enable right-click context menu
-vim.api.nvim_create_autocmd('MenuPopup', {
-  pattern = '*',
-  callback = function()
-    vim.cmd('aunmenu PopUp')
-    vim.cmd('vnoremenu PopUp.Copy "+y')
-    vim.cmd('vnoremenu PopUp.Cut "+d')
-    vim.cmd('nnoremenu PopUp.Paste "+p')
-    vim.cmd('vnoremenu PopUp.Paste "+p')
-    vim.cmd('vnoremenu PopUp.Select\\ All ggVG')
-  end,
-})
-
--- Additional mouse behavior
+-- Additional mouse behavior for built-in right-click menu
 vim.opt.mousemodel = 'popup_setpos'  -- Right-click positions cursor and shows menu
 
 -- Auto commands
