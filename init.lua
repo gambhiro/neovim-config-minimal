@@ -1,5 +1,9 @@
 -- init.lua - Basic Neovim configuration with mouse support, tabs, and file explorer
 
+-- Leader key must be set BEFORE any keymaps
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
+
 -- Basic settings
 vim.opt.mouse = 'a'  -- Enable mouse support
 vim.opt.number = true  -- Show line numbers
@@ -8,6 +12,9 @@ vim.opt.termguicolors = true  -- True color support
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
+
+-- Disable startup screen
+vim.opt.shortmess:append('I')
 
 -- Bootstrap lazy.nvim plugin manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -165,6 +172,17 @@ keymap.set('n', '<leader>bb', ':Telescope buffers<CR>', { noremap = true, silent
 -- SPC b d - Delete/kill buffer
 keymap.set('n', '<leader>bd', ':bdelete<CR>', { noremap = true, silent = true })
 
+-- SPC t m - Toggle mouse support (allows terminal selection when disabled)
+keymap.set('n', '<leader>tm', function()
+  if vim.opt.mouse:get() == 'a' then
+    vim.opt.mouse = ''
+    print('Mouse support disabled - terminal selection enabled')
+  else
+    vim.opt.mouse = 'a'
+    print('Mouse support enabled')
+  end
+end, { noremap = true, silent = true, desc = 'Toggle mouse support' })
+
 -- Toggle file explorer
 keymap.set('n', '<C-n>', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
 keymap.set('n', '<leader>e', ':NvimTreeFocus<CR>', { noremap = true, silent = true })
@@ -179,14 +197,17 @@ for i = 1, 9 do
 end
 
 -- Enable right-click context menu
-vim.cmd([[
-  aunmenu PopUp
-  vnoremenu PopUp.Copy "+y
-  vnoremenu PopUp.Cut "+d
-  nnoremenu PopUp.Paste "+p
-  vnoremenu PopUp.Paste "+p
-  vnoremenu PopUp.Select\ All ggVG
-]])
+vim.api.nvim_create_autocmd('MenuPopup', {
+  pattern = '*',
+  callback = function()
+    vim.cmd('aunmenu PopUp')
+    vim.cmd('vnoremenu PopUp.Copy "+y')
+    vim.cmd('vnoremenu PopUp.Cut "+d')
+    vim.cmd('nnoremenu PopUp.Paste "+p')
+    vim.cmd('vnoremenu PopUp.Paste "+p')
+    vim.cmd('vnoremenu PopUp.Select\\ All ggVG')
+  end,
+})
 
 -- Additional mouse behavior
 vim.opt.mousemodel = 'popup_setpos'  -- Right-click positions cursor and shows menu
@@ -198,8 +219,5 @@ vim.api.nvim_create_autocmd('BufEnter', {
     vim.opt.formatoptions:remove({ 'c', 'r', 'o' })
   end,
 })
-
--- Leader key
-vim.g.mapleader = ' '
 
 print("Neovim configuration loaded successfully!")
