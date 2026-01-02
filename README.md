@@ -11,7 +11,21 @@ A minimal Neovim configuration with mouse support, clickable tabs, file explorer
 - **Doom Emacs Keybindings**: Familiar SPC-based keybindings
 - **Modern UI**: Tokyo Night theme with icons and statusline
 
+Does not need `python`, `pynvim`, `lua`, `luarocks`, etc. installed on the host machine.
+
+Telescope plugin can use `ripgrep` and `fd` when available (install on Windows with `choco`).
+
+Test the setup with `:checkhealth`.
+
 ## Quick Install
+
+### Windows
+
+<https://chocolatey.org/install>
+
+```bash
+choco install neovim git ripgrep fd fzf
+```
 
 ### Linux & MacOS
 

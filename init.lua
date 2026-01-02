@@ -1,6 +1,27 @@
--- init.lua - Basic Neovim configuration with mouse support, tabs, and file explorer
+-- Disable netrw before nvim-tree setup
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
--- Leader key must be set BEFORE any keymaps
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+      { out, "WarningMsg" },
+      { "\nPress any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
+end
+vim.opt.rtp:prepend(lazypath)
+
+-- Make sure to setup `mapleader` and `maplocalleader` before
+-- loading lazy.nvim so that mappings are correct.
+-- This is also a good place to setup other settings (vim.opt)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -19,165 +40,93 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
 
+-- Additional mouse behavior for built-in right-click menu
+vim.opt.mousemodel = 'popup_setpos'  -- Right-click positions cursor and shows menu
+
 -- Disable startup screen
 vim.opt.shortmess:append('I')
 
--- Bootstrap lazy.nvim plugin manager
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable",
-    lazypath,
-  })
-end
-vim.opt.rtp:prepend(lazypath)
-
--- Disable netrw before nvim-tree setup (strongly recommended)
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
--- Plugin specifications
+-- Setup lazy.nvim
 require("lazy").setup({
-  -- File explorer with mouse support
-  {
-    "nvim-tree/nvim-tree.lua",
-    dependencies = {
-      "nvim-tree/nvim-web-devicons",
+  spec = {
+    -- File explorer with mouse support
+    {
+      "nvim-tree/nvim-tree.lua",
+      dependencies = {
+        "nvim-tree/nvim-web-devicons",
+      },
+      config = function()
+        require("nvim-tree").setup({
+            view = {
+              width = 30,
+            },
+        })
+      end,
     },
-    config = function()
-      -- Disable netrw at the very start
-      vim.g.loaded_netrw = 1
-      vim.g.loaded_netrwPlugin = 1
 
-      require("nvim-tree").setup({
-        view = {
-          width = 30,
-        },
-        renderer = {
-          icons = {
-            show = {
-              file = true,
-              folder = true,
-              folder_arrow = true,
-              git = true,
+    -- Status line
+    {
+      "nvim-lualine/lualine.nvim",
+      dependencies = { "nvim-tree/nvim-web-devicons" },
+      config = function()
+        require('lualine').setup()
+      end,
+    },
+
+    -- Buffer line (clickable tabs)
+    {
+      "akinsho/bufferline.nvim",
+      version = "*",
+      dependencies = "nvim-tree/nvim-web-devicons",
+      config = function()
+        require("bufferline").setup({
+          options = {
+            offsets = {
+              {
+                filetype = "NvimTree",
+                text = "File Explorer",
+                text_align = "center",
+                separator = true,
+              }
+            },
+          }
+        })
+      end,
+    },
+
+    -- Telescope fuzzy finder (for Doom-style search commands)
+    {
+      "nvim-telescope/telescope.nvim",
+      dependencies = { "nvim-lua/plenary.nvim" },
+      config = function()
+        require('telescope').setup({
+          defaults = {
+            mappings = {
+              i = {
+                ["<C-j>"] = "move_selection_next",
+                ["<C-k>"] = "move_selection_previous",
+              },
             },
           },
-        },
-        actions = {
-          open_file = {
-            quit_on_open = false,
-          },
-        },
-        -- Disable system_open to prevent the E475 error
-        system_open = {
-          cmd = nil,
-        },
-        -- Fix for the 'q' key error
-        on_attach = function(bufnr)
-          local api = require('nvim-tree.api')
+        })
+      end,
+    },
 
-          local function opts(desc)
-            return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
-          end
-
-          -- Default mappings
-          api.config.mappings.default_on_attach(bufnr)
-
-          -- Override 'q' to properly close
-          vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
-        end,
-      })
-    end,
+    -- Color scheme
+    {
+      "folke/tokyonight.nvim",
+      lazy = false,
+      priority = 1000,
+      config = function()
+        vim.cmd([[colorscheme tokyonight-night]])
+      end,
+    },
   },
 
-  -- Buffer line (clickable tabs)
-  {
-    "akinsho/bufferline.nvim",
-    version = "*",
-    dependencies = "nvim-tree/nvim-web-devicons",
-    config = function()
-      require("bufferline").setup({
-        options = {
-          mode = "buffers",
-          numbers = "ordinal",
-          close_command = "bdelete! %d",
-          right_mouse_command = "bdelete! %d",
-          left_mouse_command = "buffer %d",
-          middle_mouse_command = nil,
-          indicator = {
-            style = 'icon',
-            icon = '▎',
-          },
-          buffer_close_icon = '󰅖',
-          modified_icon = '●',
-          close_icon = '',
-          left_trunc_marker = '',
-          right_trunc_marker = '',
-          diagnostics = "nvim_lsp",
-          offsets = {
-            {
-              filetype = "NvimTree",
-              text = "File Explorer",
-              text_align = "center",
-              separator = true,
-            }
-          },
-          show_buffer_icons = true,
-          show_buffer_close_icons = true,
-          show_close_icon = true,
-          show_tab_indicators = true,
-          separator_style = "thin",
-        }
-      })
-    end,
-  },
+  -- Configure any other settings here.
 
-  -- Telescope fuzzy finder (for Doom-style search commands)
-  {
-    "nvim-telescope/telescope.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-      require('telescope').setup({
-        defaults = {
-          mappings = {
-            i = {
-              ["<C-j>"] = "move_selection_next",
-              ["<C-k>"] = "move_selection_previous",
-            },
-          },
-        },
-      })
-    end,
-  },
-
-  -- Status line
-  {
-    "nvim-lualine/lualine.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    config = function()
-      require('lualine').setup({
-        options = {
-          theme = 'auto',
-          section_separators = '',
-          component_separators = '|'
-        }
-      })
-    end,
-  },
-
-  -- Color scheme
-  {
-    "folke/tokyonight.nvim",
-    lazy = false,
-    priority = 1000,
-    config = function()
-      vim.cmd([[colorscheme tokyonight-night]])
-    end,
-  },
+  -- automatically check for plugin updates
+  -- checker = { enabled = true },
 })
 
 -- Key mappings (Doom Emacs style)
@@ -229,15 +178,4 @@ for i = 1, 9 do
   keymap.set('n', '<leader>' .. i, ':BufferLineGoToBuffer ' .. i .. '<CR>', { noremap = true, silent = true })
 end
 
--- Additional mouse behavior for built-in right-click menu
-vim.opt.mousemodel = 'popup_setpos'  -- Right-click positions cursor and shows menu
-
--- Auto commands
-vim.api.nvim_create_autocmd('BufEnter', {
-  pattern = '*',
-  callback = function()
-    vim.opt.formatoptions:remove({ 'c', 'r', 'o' })
-  end,
-})
-
-print("Neovim configuration loaded successfully!")
+print("Neovim config loaded successfully")
