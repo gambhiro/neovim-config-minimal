@@ -80,6 +80,17 @@ mkdir -p ~/AppData/Local/nvim && curl -fsSL https://raw.githubusercontent.com/ga
 | `SPC b b` | Switch buffer |
 | `SPC b d` | Delete/kill buffer |
 
+### Window Management
+
+| Keybinding | Action |
+|------------|--------|
+| `SPC w w` | Switch to other window |
+| `SPC w v` | Split vertical, stay in current |
+| `SPC w V` | Split vertical, focus new window |
+| `SPC w s` | Split horizontal, stay in current |
+| `SPC w S` | Split horizontal, focus new window |
+| `SPC w d` | Close current window |
+
 ### File Explorer
 
 | Keybinding | Action |

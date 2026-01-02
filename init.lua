@@ -169,6 +169,25 @@ end, { noremap = true, silent = false, desc = 'Toggle mouse support' })
 keymap.set('n', '<C-n>', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
 keymap.set('n', '<leader>e', ':NvimTreeFocus<CR>', { noremap = true, silent = true })
 
+-- Window management (Doom-style SPC w prefix)
+-- SPC w w - Switch to other window
+keymap.set('n', '<leader>ww', '<C-w>w', { noremap = true, silent = true, desc = 'Switch to other window' })
+
+-- SPC w v - Split window vertically (side by side), stay in current
+keymap.set('n', '<leader>wv', '<C-w>v<C-w>h', { noremap = true, silent = true, desc = 'Split vertical, stay' })
+
+-- SPC w V - Split window vertically and focus new window
+keymap.set('n', '<leader>wV', '<C-w>v<C-w>l', { noremap = true, silent = true, desc = 'Split vertical, focus new' })
+
+-- SPC w s - Split window horizontally (stacked), stay in current
+keymap.set('n', '<leader>ws', '<C-w>s<C-w>k', { noremap = true, silent = true, desc = 'Split horizontal, stay' })
+
+-- SPC w S - Split window horizontally and focus new window
+keymap.set('n', '<leader>wS', '<C-w>s<C-w>j', { noremap = true, silent = true, desc = 'Split horizontal, focus new' })
+
+-- SPC w d - Close current window
+keymap.set('n', '<leader>wd', '<C-w>c', { noremap = true, silent = true, desc = 'Close window' })
+
 -- Buffer navigation with bufferline
 keymap.set('n', '<S-l>', ':BufferLineCycleNext<CR>', { noremap = true, silent = true })
 keymap.set('n', '<S-h>', ':BufferLineCyclePrev<CR>', { noremap = true, silent = true })
